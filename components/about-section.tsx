@@ -8,7 +8,7 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Brain, Code2, Database, Palette } from "lucide-react";
 import { FaJava } from "react-icons/fa";
 import type { IconType } from "react-icons";
@@ -225,11 +225,6 @@ const techCategories: TechCategory[] = [
 
 export function AboutSection() {
   const ref = useRef<HTMLElement>(null);
-  const techStackRef = useRef<HTMLDivElement>(null);
-  const hasPausedAtTechBottom = useRef(false);
-  const stopScrollY = useRef<number | null>(null);
-  const lastScrollY = useRef(0);
-  const downScrollLockUntil = useRef(0);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [activeCategory, setActiveCategory] = useState("frontend");
   const { scrollYProgress } = useScroll({
@@ -255,75 +250,6 @@ export function AboutSection() {
   const currentSkills =
     techCategories.find((category) => category.id === activeCategory)?.skills ||
     [];
-
-  useEffect(() => {
-    const computeStopY = () => {
-      const rect = techStackRef.current?.getBoundingClientRect();
-      if (!rect) return null;
-      const absoluteBottom = window.scrollY + rect.bottom;
-      const triggerLine = window.innerHeight * 0.88;
-      return Math.max(0, Math.round(absoluteBottom - triggerLine));
-    };
-
-    const refreshStopY = () => {
-      stopScrollY.current = computeStopY();
-    };
-
-    const releasePauseIfScrolledUp = () => {
-      const target = stopScrollY.current;
-      if (target === null) return;
-      if (window.scrollY < target - 120) {
-        hasPausedAtTechBottom.current = false;
-      }
-    };
-
-    const handleWheel = (event: WheelEvent) => {
-      const target = stopScrollY.current;
-      if (target === null) return;
-      const now = performance.now();
-
-      // Upward scroll should never be blocked.
-      if (event.deltaY <= 0) {
-        releasePauseIfScrolledUp();
-        return;
-      }
-
-      // While lock is active, force position to stay on the stop line.
-      if (now < downScrollLockUntil.current) {
-        event.preventDefault();
-        return;
-      }
-
-      const projectedY = window.scrollY + event.deltaY;
-      const crossingStopPoint =
-        window.scrollY < target && projectedY >= target;
-
-      if (crossingStopPoint && !hasPausedAtTechBottom.current) {
-        event.preventDefault();
-        window.scrollTo({ top: target, behavior: "auto" });
-        hasPausedAtTechBottom.current = true;
-        downScrollLockUntil.current = now + 460;
-      }
-    };
-
-    const handleScroll = () => {
-      releasePauseIfScrolledUp();
-      lastScrollY.current = window.scrollY;
-    };
-
-    refreshStopY();
-    lastScrollY.current = window.scrollY;
-
-    window.addEventListener("resize", refreshStopY, { passive: true });
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("resize", refreshStopY);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
 
   return (
     <section
@@ -443,7 +369,6 @@ export function AboutSection() {
 
         {/* Tech Stack Section */}
         <motion.div
-          ref={techStackRef}
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.5 }}

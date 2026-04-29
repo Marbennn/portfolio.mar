@@ -37,9 +37,9 @@ export function SectionSlideCover({
   );
 
   const panelPullProgress = useSpring(delayedProgress, {
-    stiffness: 190,
-    damping: 34,
-    mass: 0.48,
+    stiffness: 170,
+    damping: 32,
+    mass: 0.56,
   });
   const effectivePullProgress = useTransform(
     panelPullProgress,
@@ -49,7 +49,7 @@ export function SectionSlideCover({
   const panelPullY = useTransform(
     effectivePullProgress,
     [0, 0.78, 1],
-    isFooterSafe ? [260, 60, 0] : [560, 130, 0],
+    isFooterSafe ? [220, 52, 0] : [420, 96, 0],
   );
   const panelPullShadow = useTransform(
     effectivePullProgress,
@@ -60,7 +60,7 @@ export function SectionSlideCover({
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
         ]
       : [
-          "0 -64px 110px -72px oklch(0.11 0.01 250 / 0.42)",
+          "0 -42px 74px -56px oklch(0.11 0.01 250 / 0.34)",
           "0 -10px 20px -18px oklch(0.11 0.01 250 / 0)",
         ],
   );
