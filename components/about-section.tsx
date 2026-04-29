@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { useRef, useState } from "react";
 import { Brain, Code2, Database, Palette } from "lucide-react";
+import Image from "next/image";
 import { FaJava } from "react-icons/fa";
 import type { IconType } from "react-icons";
 import {
@@ -425,9 +426,11 @@ export function AboutSection() {
                               className={`w-7 h-7 ${tech.iconClassName} transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5`}
                             />
                           ) : tech.imageSrc ? (
-                            <img
+                            <Image
                               src={tech.imageSrc}
                               alt={`${tech.name} icon`}
+                              width={28}
+                              height={28}
                               className="w-7 h-7 object-contain transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-0.5"
                             />
                           ) : (

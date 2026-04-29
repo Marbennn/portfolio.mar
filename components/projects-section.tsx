@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import {
   ChevronLeft,
   ChevronRight,
@@ -342,6 +343,7 @@ export function ProjectsSection() {
   const [activeShotFilter, setActiveShotFilter] =
     useState<ScreenshotFilter>("All");
   const [portalReady, setPortalReady] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const filteredProjects =
     activeCategory === "All"
@@ -368,6 +370,11 @@ export function ProjectsSection() {
     );
   }, [activeShotFilter, selectedProject]);
   const activeShot = visibleShots[activeShotIndex] ?? null;
+  const resolvedActiveShotSrc = activeShot
+    ? failedImages[activeShot.src]
+      ? "/placeholder.jpg"
+      : activeShot.src
+    : null;
 
   const availableScreenshotFilters = useMemo<ScreenshotFilter[]>(() => {
     if (!selectedProject) {
@@ -438,6 +445,11 @@ export function ProjectsSection() {
     setActiveShotIndex(0);
   };
 
+  const markImageAsFailed = (src: string) => {
+    if (src === "/placeholder.jpg") return;
+    setFailedImages((prev) => (prev[src] ? prev : { ...prev, [src]: true }));
+  };
+
   return (
     <section
       id="projects"
@@ -490,105 +502,115 @@ export function ProjectsSection() {
         </motion.div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project, index) => (
-            <motion.article
-              key={project.title}
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: index * 0.08 }}
-              onClick={() => openProject(project.title)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openProject(project.title);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              className="group relative bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
-            >
-              <div className="relative h-44 overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/10">
-                <img
-                  src={
-                    project.previewSrc ??
-                    project.screenshots[0]?.src ??
-                    "/placeholder.jpg"
+          {filteredProjects.map((project, index) => {
+            const previewSrc =
+              project.previewSrc ??
+              project.screenshots[0]?.src ??
+              "/placeholder.jpg";
+            const resolvedPreviewSrc = failedImages[previewSrc]
+              ? "/placeholder.jpg"
+              : previewSrc;
+
+            return (
+              <motion.article
+                key={project.title}
+                initial={{ opacity: 0, y: 30 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.6, delay: index * 0.08 }}
+                onClick={() => openProject(project.title)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openProject(project.title);
                   }
-                  alt={`${project.title} preview`}
-                  className={`absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105 ${
-                    project.previewMode === "contain"
-                      ? "object-contain object-center p-2"
-                      : "object-cover object-center"
-                  }`}
-                  onError={(event) => {
-                    event.currentTarget.src = "/placeholder.jpg";
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
-                {project.featured && (
-                  <div className="absolute top-3 left-3 z-20">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      Featured
-                    </span>
-                  </div>
-                )}
-                <div className="absolute top-3 right-3 z-20">
-                  <span className="px-2 py-0.5 text-[10px] font-mono bg-background/80 backdrop-blur-sm text-muted-foreground rounded-full border border-border/50">
-                    {project.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] text-muted-foreground font-mono block mb-0.5">
-                      {project.year}
-                    </span>
-                    <h3 className="text-base font-semibold group-hover:text-primary transition-colors truncate">
-                      {project.title}
-                    </h3>
-                    <span className="text-[11px] text-primary/80 font-medium">
-                      {project.role}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 ml-2 flex-shrink-0">
-                    <span className="p-1.5 text-muted-foreground">
-                      <Github size={14} />
-                    </span>
-                    <span className="p-1.5 text-muted-foreground">
-                      <ExternalLink size={14} />
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-muted-foreground text-xs leading-relaxed mb-3 line-clamp-2">
-                  {project.description}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {project.technologies.slice(0, 4).map((tech) => (
-                    <span
-                      key={tech}
-                      className="px-2 py-0.5 text-[10px] bg-secondary text-secondary-foreground rounded-md"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                  {project.technologies.length > 4 && (
-                    <span className="px-2 py-0.5 text-[10px] bg-secondary text-muted-foreground rounded-md">
-                      +{project.technologies.length - 4}
-                    </span>
+                }}
+                role="button"
+                tabIndex={0}
+                className="group relative bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
+              >
+                <div className="relative h-44 overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/10">
+                  <Image
+                    src={resolvedPreviewSrc}
+                    alt={`${project.title} preview`}
+                    fill
+                    sizes="(min-width: 1280px) 360px, (min-width: 1024px) 30vw, (min-width: 640px) 46vw, 94vw"
+                    quality={75}
+                    priority={index < 2}
+                    className={`absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-105 ${
+                      project.previewMode === "contain"
+                        ? "object-contain object-center p-2"
+                        : "object-cover object-center"
+                    }`}
+                    onError={() => {
+                      markImageAsFailed(previewSrc);
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+                  {project.featured && (
+                    <div className="absolute top-3 left-3 z-20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-primary text-primary-foreground rounded-full">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Featured
+                      </span>
+                    </div>
                   )}
+                  <div className="absolute top-3 right-3 z-20">
+                    <span className="px-2 py-0.5 text-[10px] font-mono bg-background/80 backdrop-blur-sm text-muted-foreground rounded-full border border-border/50">
+                      {project.category}
+                    </span>
+                  </div>
                 </div>
 
-                <button className="w-full py-2 text-xs font-medium rounded-lg border border-border/80 text-foreground hover:bg-secondary transition-colors">
-                  Open Project Details
-                </button>
-              </div>
-            </motion.article>
-          ))}
+                <div className="p-5">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] text-muted-foreground font-mono block mb-0.5">
+                        {project.year}
+                      </span>
+                      <h3 className="text-base font-semibold group-hover:text-primary transition-colors truncate">
+                        {project.title}
+                      </h3>
+                      <span className="text-[11px] text-primary/80 font-medium">
+                        {project.role}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 ml-2 flex-shrink-0">
+                      <span className="p-1.5 text-muted-foreground">
+                        <Github size={14} />
+                      </span>
+                      <span className="p-1.5 text-muted-foreground">
+                        <ExternalLink size={14} />
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-muted-foreground text-xs leading-relaxed mb-3 line-clamp-2">
+                    {project.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {project.technologies.slice(0, 4).map((tech) => (
+                      <span
+                        key={tech}
+                        className="px-2 py-0.5 text-[10px] bg-secondary text-secondary-foreground rounded-md"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                    {project.technologies.length > 4 && (
+                      <span className="px-2 py-0.5 text-[10px] bg-secondary text-muted-foreground rounded-md">
+                        +{project.technologies.length - 4}
+                      </span>
+                    )}
+                  </div>
+
+                  <button className="w-full py-2 text-xs font-medium rounded-lg border border-border/80 text-foreground hover:bg-secondary transition-colors">
+                    Open Project Details
+                  </button>
+                </div>
+              </motion.article>
+            );
+          })}
         </div>
       </div>
 
@@ -664,8 +686,8 @@ export function ProjectsSection() {
                     <div className="space-y-4">
                       <div className="relative border border-border rounded-xl overflow-hidden bg-secondary/40 h-[420px]">
                         <AnimatePresence mode="wait" initial={false}>
-                          <motion.img
-                            key={`${activeShot.src}-${activeShotIndex}`}
+                          <motion.div
+                            key={`${resolvedActiveShotSrc}-${activeShotIndex}`}
                             custom={shotDirection}
                             variants={{
                               enter: (direction: 1 | -1) => ({
@@ -688,13 +710,20 @@ export function ProjectsSection() {
                             animate="center"
                             exit="exit"
                             transition={{ duration: 0.25, ease: "easeOut" }}
-                            src={activeShot.src}
-                            alt={activeShot.title}
-                            className="absolute inset-0 w-full h-full object-contain object-center"
-                            onError={(event) => {
-                              event.currentTarget.src = "/placeholder.jpg";
-                            }}
-                          />
+                            className="absolute inset-0"
+                          >
+                            <Image
+                              src={resolvedActiveShotSrc ?? "/placeholder.jpg"}
+                              alt={activeShot.title}
+                              fill
+                              sizes="(min-width: 1280px) 860px, (min-width: 1024px) 62vw, 94vw"
+                              quality={80}
+                              className="object-contain object-center"
+                              onError={() => {
+                                markImageAsFailed(activeShot.src);
+                              }}
+                            />
+                          </motion.div>
                         </AnimatePresence>
                       </div>
 
