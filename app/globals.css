@@ -126,9 +126,6 @@
     font-family: var(--font-lexend), "Segoe UI", sans-serif;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
 }
 
 /* Custom scrollbar */

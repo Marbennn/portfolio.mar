@@ -15,7 +15,7 @@ type SectionSlideCoverProps = {
 export function SectionSlideCover({
   children,
   zIndexClassName = "z-10",
-  overlapClassName = "-mt-[50vh]",
+  overlapClassName = "-mt-[38vh]",
   variant = "default",
   panelClassName = "",
   settleEarly = false,
@@ -26,10 +26,10 @@ export function SectionSlideCover({
     target: ref,
     offset: isFooterSafe
       ? ["start 98%", "start 16%"]
-      : ["start 100%", "start -24%"],
+      : ["start 100%", "start -16%"],
   });
 
-  const pullStartDelay = isFooterSafe ? 0.1 : 0.18;
+  const pullStartDelay = isFooterSafe ? 0.08 : 0.14;
   const delayedProgress = useTransform(
     scrollYProgress,
     [0, pullStartDelay, 1],
@@ -37,19 +37,19 @@ export function SectionSlideCover({
   );
 
   const panelPullProgress = useSpring(delayedProgress, {
-    stiffness: 170,
-    damping: 32,
-    mass: 0.56,
+    stiffness: 140,
+    damping: 36,
+    mass: 0.62,
   });
   const effectivePullProgress = useTransform(
     panelPullProgress,
-    [0, settleEarly ? 0.68 : isFooterSafe ? 0.72 : 0.82],
+    [0, settleEarly ? 0.62 : isFooterSafe ? 0.74 : 0.9],
     [0, 1],
   );
   const panelPullY = useTransform(
     effectivePullProgress,
-    [0, 0.78, 1],
-    isFooterSafe ? [220, 52, 0] : [420, 96, 0],
+    [0, 0.84, 1],
+    isFooterSafe ? [180, 44, 0] : [280, 62, 0],
   );
   const panelPullShadow = useTransform(
     effectivePullProgress,
@@ -60,8 +60,8 @@ export function SectionSlideCover({
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
         ]
       : [
-          "0 -42px 74px -56px oklch(0.11 0.01 250 / 0.34)",
-          "0 -10px 20px -18px oklch(0.11 0.01 250 / 0)",
+          "0 -24px 44px -40px oklch(0.11 0.01 250 / 0.2)",
+          "0 -6px 14px -14px oklch(0.11 0.01 250 / 0)",
         ],
   );
 

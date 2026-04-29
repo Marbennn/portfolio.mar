@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Github, Linkedin, Mail, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -16,6 +16,8 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  const scrolledRef = useRef(false);
+  const activeSectionRef = useRef("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -32,18 +34,28 @@ export function Navigation() {
 
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
-        setScrolled(window.scrollY > 50);
+        const nextScrolled = window.scrollY > 50;
+        if (nextScrolled !== scrolledRef.current) {
+          scrolledRef.current = nextScrolled;
+          setScrolled(nextScrolled);
+        }
 
         // Update active section based on scroll position
+        let nextActiveSection = "";
         for (const section of sections) {
           const element = document.getElementById(section);
           if (element) {
             const rect = element.getBoundingClientRect();
             if (rect.top <= 150) {
-              setActiveSection(section);
+              nextActiveSection = section;
               break;
             }
           }
+        }
+
+        if (nextActiveSection !== activeSectionRef.current) {
+          activeSectionRef.current = nextActiveSection;
+          setActiveSection(nextActiveSection);
         }
       });
     };

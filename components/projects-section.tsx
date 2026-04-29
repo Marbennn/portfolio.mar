@@ -455,7 +455,7 @@ export function ProjectsSection() {
       id="projects"
       ref={ref}
       style={{ position: "relative" }}
-      className="pt-32 pb-[28vh] overflow-x-clip"
+      className="pt-32 pb-[18vh] overflow-x-clip"
     >
       <motion.div
         style={{ y: glowY, x: glowX }}
