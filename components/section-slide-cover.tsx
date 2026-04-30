@@ -8,6 +8,7 @@ type SectionSlideCoverProps = {
   zIndexClassName?: string;
   overlapClassName?: string;
   variant?: "default" | "footerSafe";
+  strength?: "normal" | "strong";
   panelClassName?: string;
   settleEarly?: boolean;
 };
@@ -17,19 +18,23 @@ export function SectionSlideCover({
   zIndexClassName = "z-10",
   overlapClassName = "-mt-[38vh]",
   variant = "default",
+  strength = "normal",
   panelClassName = "",
   settleEarly = false,
 }: SectionSlideCoverProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isFooterSafe = variant === "footerSafe";
+  const isStrong = strength === "strong";
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: isFooterSafe
       ? ["start 98%", "start 16%"]
-      : ["start 100%", "start -16%"],
+      : isStrong
+        ? ["start 100%", "start -22%"]
+        : ["start 100%", "start -16%"],
   });
 
-  const pullStartDelay = isFooterSafe ? 0.08 : 0.14;
+  const pullStartDelay = isFooterSafe ? 0.08 : isStrong ? 0.1 : 0.14;
   const delayedProgress = useTransform(
     scrollYProgress,
     [0, pullStartDelay, 1],
@@ -37,19 +42,22 @@ export function SectionSlideCover({
   );
 
   const panelPullProgress = useSpring(delayedProgress, {
-    stiffness: 140,
-    damping: 36,
-    mass: 0.62,
+    stiffness: isStrong ? 152 : 140,
+    damping: isStrong ? 34 : 36,
+    mass: isStrong ? 0.58 : 0.62,
   });
   const effectivePullProgress = useTransform(
     panelPullProgress,
-    [0, settleEarly ? 0.62 : isFooterSafe ? 0.74 : 0.9],
+    [
+      0,
+      settleEarly ? 0.62 : isFooterSafe ? 0.74 : isStrong ? 0.82 : 0.9,
+    ],
     [0, 1],
   );
   const panelPullY = useTransform(
     effectivePullProgress,
-    [0, 0.84, 1],
-    isFooterSafe ? [180, 44, 0] : [280, 62, 0],
+    [0, isStrong ? 0.8 : 0.84, 1],
+    isFooterSafe ? [180, 44, 0] : isStrong ? [360, 82, 0] : [280, 62, 0],
   );
   const panelPullShadow = useTransform(
     effectivePullProgress,
@@ -59,10 +67,15 @@ export function SectionSlideCover({
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
         ]
-      : [
-          "0 -24px 44px -40px oklch(0.11 0.01 250 / 0.2)",
-          "0 -6px 14px -14px oklch(0.11 0.01 250 / 0)",
-        ],
+      : isStrong
+        ? [
+            "0 -34px 62px -48px oklch(0.11 0.01 250 / 0.28)",
+            "0 -8px 16px -14px oklch(0.11 0.01 250 / 0)",
+          ]
+        : [
+            "0 -24px 44px -40px oklch(0.11 0.01 250 / 0.2)",
+            "0 -6px 14px -14px oklch(0.11 0.01 250 / 0)",
+          ],
   );
 
   return (

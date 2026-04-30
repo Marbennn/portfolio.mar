@@ -16,7 +16,11 @@ export default function Portfolio() {
       <main>
         <HeroSection />
         <AboutSection />
-        <SectionSlideCover zIndexClassName="z-20">
+        <SectionSlideCover
+          zIndexClassName="z-20"
+          overlapClassName="-mt-[44vh]"
+          strength="strong"
+        >
           <ProjectsSection />
         </SectionSlideCover>
         <SectionSlideCover zIndexClassName="z-30">
