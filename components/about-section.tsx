@@ -257,7 +257,7 @@ export function AboutSection() {
       id="about"
       ref={ref}
       style={{ position: "relative" }}
-      className="pt-32 pb-[24vh] overflow-x-clip"
+      className="pt-32 pb-[26vh] overflow-x-clip"
     >
       {/* Background Accent */}
       <motion.div
