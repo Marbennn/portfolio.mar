@@ -324,9 +324,27 @@ const projects: Project[] = [
 const categories = ["All", "AI", "Web", "Game", "Desktop"] as const;
 type Category = (typeof categories)[number];
 type ScreenshotFilter = "All" | ScreenshotPlatform;
+const PROJECT_DIALOG_TITLE_ID = "project-dialog-title";
+const PROJECT_DIALOG_DESCRIPTION_ID = "project-dialog-description";
+const FOCUSABLE_ELEMENT_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR),
+  ).filter(
+    (element) =>
+      element.getAttribute("aria-hidden") !== "true" &&
+      !element.hasAttribute("hidden") &&
+      element.getClientRects().length > 0,
+  );
+}
 
 export function ProjectsSection() {
   const ref = useRef<HTMLElement>(null);
+  const modalPanelRef = useRef<HTMLDivElement>(null);
+  const closeDialogButtonRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { scrollYProgress } = useScroll({
@@ -424,7 +442,75 @@ export function ProjectsSection() {
     setPortalReady(true);
   }, []);
 
-  const openProject = (title: string) => {
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusFrameId = window.requestAnimationFrame(() => {
+      closeDialogButtonRef.current?.focus();
+    });
+
+    const handleModalKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSelectedProjectTitle(null);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const modalContainer = modalPanelRef.current;
+      if (!modalContainer) return;
+
+      const focusableElements = getFocusableElements(modalContainer);
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        modalContainer.focus();
+        return;
+      }
+
+      const firstFocusable = focusableElements[0];
+      const lastFocusable = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleModalKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusFrameId);
+      document.removeEventListener("keydown", handleModalKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedProject]);
+
+  useEffect(() => {
+    if (selectedProject) return;
+
+    const triggerElement = lastFocusedElementRef.current;
+    if (!triggerElement) return;
+
+    window.requestAnimationFrame(() => {
+      triggerElement.focus();
+    });
+  }, [selectedProject]);
+
+  const openProject = (title: string, trigger?: HTMLElement | null) => {
+    if (trigger) {
+      lastFocusedElementRef.current = trigger;
+    } else if (document.activeElement instanceof HTMLElement) {
+      lastFocusedElementRef.current = document.activeElement;
+    }
+
     setSelectedProjectTitle(title);
     setActiveShotFilter("All");
     setShotDirection(1);
@@ -555,16 +641,21 @@ export function ProjectsSection() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: index * 0.08 }}
-                onClick={() => openProject(project.title)}
+                onClick={(event) =>
+                  openProject(project.title, event.currentTarget)
+                }
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    openProject(project.title);
+                    openProject(project.title, event.currentTarget);
                   }
                 }}
                 role="button"
                 tabIndex={0}
-                className="group relative bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 cursor-pointer"
+                aria-label={`Open ${project.title} project details`}
+                aria-haspopup="dialog"
+                aria-controls="project-details-dialog"
+                className="group relative bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <div className="relative h-44 overflow-hidden bg-gradient-to-br from-secondary via-secondary/80 to-primary/10">
                   <Image
@@ -642,9 +733,12 @@ export function ProjectsSection() {
                     )}
                   </div>
 
-                  <button className="w-full py-2 text-xs font-medium rounded-lg border border-border/80 text-foreground hover:bg-secondary transition-colors">
+                  <span
+                    aria-hidden
+                    className="block w-full py-2 text-xs font-medium rounded-lg border border-border/80 text-foreground hover:bg-secondary transition-colors"
+                  >
                     Open Project Details
-                  </button>
+                  </span>
                 </div>
               </motion.article>
             );
@@ -661,7 +755,7 @@ export function ProjectsSection() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm p-4 sm:p-8 flex items-center justify-center"
-                onClick={closeProject}
+                onClick={() => closeProject()}
               >
                 <motion.div
                   initial={
@@ -683,6 +777,13 @@ export function ProjectsSection() {
                     shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }
                   }
                   className="w-full max-w-6xl max-h-[90vh] bg-card border border-border rounded-2xl overflow-hidden shadow-2xl"
+                  id="project-details-dialog"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={PROJECT_DIALOG_TITLE_ID}
+                  aria-describedby={PROJECT_DIALOG_DESCRIPTION_ID}
+                  tabIndex={-1}
+                  ref={modalPanelRef}
                   onClick={(event) => event.stopPropagation()}
                 >
               <div className="flex items-start justify-between p-6 border-b border-border">
@@ -690,7 +791,7 @@ export function ProjectsSection() {
                   <span className="text-xs uppercase tracking-[0.12em] text-primary font-mono block mb-1">
                     {selectedProject.category} Project
                   </span>
-                  <h3 className="text-2xl font-bold">
+                  <h3 id={PROJECT_DIALOG_TITLE_ID} className="text-2xl font-bold">
                     {selectedProject.title}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -699,6 +800,7 @@ export function ProjectsSection() {
                 </div>
                 <button
                   onClick={closeProject}
+                  ref={closeDialogButtonRef}
                   className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                   aria-label="Close project details"
                 >
@@ -848,7 +950,9 @@ export function ProjectsSection() {
                   <div>
                     <h4 className="text-lg font-semibold mb-2">Overview</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
+                      <span id={PROJECT_DIALOG_DESCRIPTION_ID}>
                       {selectedProject.overview}
+                      </span>
                     </p>
                   </div>
 
