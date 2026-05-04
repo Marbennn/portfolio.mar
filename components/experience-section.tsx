@@ -3,6 +3,7 @@
 import {
   motion,
   useInView,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
@@ -73,14 +74,27 @@ const education = {
 
 export function ExperienceSection() {
   const ref = useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const glowY = useTransform(scrollYProgress, [0, 1], [140, -140]);
-  const glowYReverse = useTransform(scrollYProgress, [0, 1], [-105, 105]);
-  const glowX = useTransform(scrollYProgress, [0, 1], [36, -36]);
+  const glowY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [140, -140],
+  );
+  const glowYReverse = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-105, 105],
+  );
+  const glowX = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [36, -36],
+  );
 
   return (
     <section

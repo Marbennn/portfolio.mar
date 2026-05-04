@@ -3,6 +3,7 @@
 import {
   motion,
   useInView,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
@@ -57,14 +58,27 @@ const socialLinks = [
 
 export function ContactSection() {
   const ref = useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const accentY = useTransform(scrollYProgress, [0, 1], [125, -125]);
-  const accentYReverse = useTransform(scrollYProgress, [0, 1], [-90, 90]);
-  const accentX = useTransform(scrollYProgress, [0, 1], [24, -24]);
+  const accentY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [125, -125],
+  );
+  const accentYReverse = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-90, 90],
+  );
+  const accentX = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [24, -24],
+  );
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const copyEmail = () => {
@@ -84,15 +98,23 @@ export function ContactSection() {
       <motion.div
         style={{ y: accentY, x: accentX }}
         className="absolute top-1/3 left-1/4 w-[26rem] h-[26rem] rounded-full bg-primary/16 blur-[150px]"
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }
+        }
       />
       <motion.div
         style={{ y: accentYReverse }}
@@ -175,7 +197,7 @@ export function ContactSection() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-lg text-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-300 group"
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <social.icon className="w-5 h-5" />
@@ -231,7 +253,7 @@ export function ContactSection() {
                 <motion.a
                   href="mailto:maar.recepcion.up@phinmaed.com"
                   className="group flex items-center justify-center gap-3 w-full py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
                   <Send className="w-5 h-5" />

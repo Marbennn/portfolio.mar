@@ -1,11 +1,12 @@
 "use client";
 
-import { motion, useSpring } from "framer-motion";
+import { motion, useReducedMotion, useSpring } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const OFFSCREEN_POSITION = -1000;
 
 export function CursorEffect() {
+  const shouldReduceMotion = useReducedMotion();
   const [isEnabled, setIsEnabled] = useState(false);
   const x = useSpring(OFFSCREEN_POSITION, {
     stiffness: 300,
@@ -19,6 +20,13 @@ export function CursorEffect() {
   });
 
   useEffect(() => {
+    if (shouldReduceMotion) {
+      setIsEnabled(false);
+      x.set(OFFSCREEN_POSITION);
+      y.set(OFFSCREEN_POSITION);
+      return;
+    }
+
     const mediaQuery = window.matchMedia("(pointer: fine)");
     const updateEnabled = () => setIsEnabled(mediaQuery.matches);
 
@@ -45,7 +53,7 @@ export function CursorEffect() {
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseleave", handleLeave);
     };
-  }, [x, y]);
+  }, [x, y, shouldReduceMotion]);
 
   if (!isEnabled) {
     return null;

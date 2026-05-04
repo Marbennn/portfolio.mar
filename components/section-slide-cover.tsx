@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useSpring, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useSpring,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { useRef, type ReactNode } from "react";
 
 type SectionSlideCoverProps = {
@@ -23,8 +29,10 @@ export function SectionSlideCover({
   settleEarly = false,
 }: SectionSlideCoverProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const isFooterSafe = variant === "footerSafe";
   const isStrong = strength === "strong";
+  const resolvedOverlapClassName = shouldReduceMotion ? "mt-0" : overlapClassName;
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: isFooterSafe
@@ -38,7 +46,7 @@ export function SectionSlideCover({
   const delayedProgress = useTransform(
     scrollYProgress,
     [0, pullStartDelay, 1],
-    [0, 0, 1],
+    shouldReduceMotion ? [1, 1, 1] : [0, 0, 1],
   );
 
   const panelPullProgress = useSpring(delayedProgress, {
@@ -56,13 +64,24 @@ export function SectionSlideCover({
   );
   const panelPullY = useTransform(
     effectivePullProgress,
-    [0, isStrong ? 0.8 : 0.84, 1],
-    isFooterSafe ? [180, 44, 0] : isStrong ? [360, 82, 0] : [280, 62, 0],
+    shouldReduceMotion ? [0, 1] : [0, isStrong ? 0.8 : 0.84, 1],
+    shouldReduceMotion
+      ? [0, 0]
+      : isFooterSafe
+        ? [180, 44, 0]
+        : isStrong
+          ? [360, 82, 0]
+          : [280, 62, 0],
   );
   const panelPullShadow = useTransform(
     effectivePullProgress,
-    [0, 1],
-    isFooterSafe
+    shouldReduceMotion ? [0, 1] : [0, 1],
+    shouldReduceMotion
+      ? [
+          "0 0 0 0 oklch(0.11 0.01 250 / 0)",
+          "0 0 0 0 oklch(0.11 0.01 250 / 0)",
+        ]
+      : isFooterSafe
       ? [
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
           "0 0 0 0 oklch(0.11 0.01 250 / 0)",
@@ -81,7 +100,7 @@ export function SectionSlideCover({
   return (
     <div
       ref={ref}
-      className={`relative ${overlapClassName} ${zIndexClassName}`}
+      className={`relative ${resolvedOverlapClassName} ${zIndexClassName}`}
     >
       <motion.div
         style={{

@@ -1,17 +1,20 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ArrowDown, Sparkles } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 const roles = ["AI Specialist", "Frontend Developer", "Backend Developer"];
 
 function TypewriterText() {
+  const shouldReduceMotion = useReducedMotion();
   const [currentRoleIndex, setCurrentRoleIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    if (shouldReduceMotion) return;
+
     const currentRole = roles[currentRoleIndex];
     const timeout = setTimeout(
       () => {
@@ -34,7 +37,11 @@ function TypewriterText() {
     );
 
     return () => clearTimeout(timeout);
-  }, [displayText, isDeleting, currentRoleIndex]);
+  }, [displayText, isDeleting, currentRoleIndex, shouldReduceMotion]);
+
+  if (shouldReduceMotion) {
+    return <span className="text-foreground font-medium">{roles[0]}</span>;
+  }
 
   return (
     <span className="text-foreground font-medium">
@@ -46,18 +53,47 @@ function TypewriterText() {
 
 export function HeroSection() {
   const containerRef = useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const gridY = useTransform(scrollYProgress, [0, 1], [0, -180]);
-  const orbNearY = useTransform(scrollYProgress, [0, 1], [0, -230]);
-  const orbFarY = useTransform(scrollYProgress, [0, 1], [0, -130]);
-  const orbNearScale = useTransform(scrollYProgress, [0, 1], [1, 1.35]);
-  const orbFarScale = useTransform(scrollYProgress, [0, 1], [1, 1.2]);
+  const y = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, 200],
+  );
+  const opacity = useTransform(
+    scrollYProgress,
+    [0, 0.5],
+    shouldReduceMotion ? [1, 1] : [1, 0],
+  );
+  const gridY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, -180],
+  );
+  const orbNearY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, -230],
+  );
+  const orbFarY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [0, -130],
+  );
+  const orbNearScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [1, 1] : [1, 1.35],
+  );
+  const orbFarScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [1, 1] : [1, 1.2],
+  );
 
   return (
     <section
@@ -76,26 +112,30 @@ export function HeroSection() {
       <motion.div
         style={{ y: orbNearY, scale: orbNearScale }}
         className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-primary/20 blur-[100px]"
-        animate={{
-          x: [0, 50, 0],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={shouldReduceMotion ? undefined : { x: [0, 50, 0] }}
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }
+        }
       />
       <motion.div
         style={{ y: orbFarY, scale: orbFarScale }}
         className="absolute bottom-1/4 right-1/4 w-[28rem] h-[28rem] rounded-full bg-primary/14 blur-[130px]"
-        animate={{
-          x: [0, -40, 0],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={shouldReduceMotion ? undefined : { x: [0, -40, 0] }}
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 10,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }
+        }
       />
 
       <motion.div
@@ -110,7 +150,9 @@ export function HeroSection() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
         >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+            <span
+              className={`${shouldReduceMotion ? "" : "animate-ping "}absolute inline-flex h-full w-full rounded-full bg-primary opacity-75`}
+            />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
           <span className="text-sm text-primary">
@@ -130,8 +172,12 @@ export function HeroSection() {
               Marvin
               <motion.span
                 className="absolute -right-8 -top-4"
-                animate={{ rotate: [0, 15, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                animate={shouldReduceMotion ? undefined : { rotate: [0, 15, 0] }}
+                transition={
+                  shouldReduceMotion
+                    ? undefined
+                    : { duration: 2, repeat: Infinity }
+                }
               >
                 <Sparkles className="w-6 h-6 text-primary/60" />
               </motion.span>
@@ -171,15 +217,15 @@ export function HeroSection() {
           <motion.a
             href="#projects"
             className="group relative px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium overflow-hidden"
-            whileHover={{ scale: 1.02 }}
+            whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <span className="relative z-10">View My Work</span>
             <motion.div
               className="absolute inset-0 bg-foreground"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={shouldReduceMotion ? undefined : { x: "-100%" }}
+              whileHover={shouldReduceMotion ? undefined : { x: 0 }}
+              transition={shouldReduceMotion ? undefined : { duration: 0.3 }}
             />
             <span className="absolute inset-0 flex items-center justify-center text-background opacity-0 group-hover:opacity-100 transition-opacity z-20">
               View My Work
@@ -188,7 +234,7 @@ export function HeroSection() {
           <motion.a
             href="#contact"
             className="px-8 py-4 border border-border text-foreground rounded-lg font-medium hover:bg-secondary transition-colors"
-            whileHover={{ scale: 1.02 }}
+            whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             Get in Touch
@@ -222,8 +268,12 @@ export function HeroSection() {
         <motion.a
           href="#about"
           className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          animate={shouldReduceMotion ? undefined : { y: [0, 8, 0] }}
+          transition={
+            shouldReduceMotion
+              ? undefined
+              : { duration: 1.5, repeat: Infinity }
+          }
         >
           <span className="text-xs tracking-widest uppercase">Scroll</span>
           <ArrowDown size={20} />

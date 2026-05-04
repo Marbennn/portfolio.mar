@@ -4,6 +4,7 @@ import {
   AnimatePresence,
   motion,
   useInView,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from "framer-motion";
@@ -326,14 +327,27 @@ type ScreenshotFilter = "All" | ScreenshotPlatform;
 
 export function ProjectsSection() {
   const ref = useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const glowY = useTransform(scrollYProgress, [0, 1], [150, -150]);
-  const glowYReverse = useTransform(scrollYProgress, [0, 1], [-115, 115]);
-  const glowX = useTransform(scrollYProgress, [0, 1], [-34, 34]);
+  const glowY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [150, -150],
+  );
+  const glowYReverse = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-115, 115],
+  );
+  const glowX = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-34, 34],
+  );
   const [activeCategory, setActiveCategory] = useState<Category>("All");
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<
     string | null
@@ -449,6 +463,30 @@ export function ProjectsSection() {
     if (src === "/placeholder.jpg") return;
     setFailedImages((prev) => (prev[src] ? prev : { ...prev, [src]: true }));
   };
+
+  const screenshotMotionVariants = shouldReduceMotion
+    ? {
+        enter: { opacity: 0 },
+        center: { opacity: 1 },
+        exit: { opacity: 0 },
+      }
+    : {
+        enter: (direction: 1 | -1) => ({
+          x: direction > 0 ? 48 : -48,
+          opacity: 0,
+          scale: 0.98,
+        }),
+        center: {
+          x: 0,
+          opacity: 1,
+          scale: 1,
+        },
+        exit: (direction: 1 | -1) => ({
+          x: direction > 0 ? -48 : 48,
+          opacity: 0,
+          scale: 0.98,
+        }),
+      };
 
   return (
     <section
@@ -626,10 +664,24 @@ export function ProjectsSection() {
                 onClick={closeProject}
               >
                 <motion.div
-                  initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
+                  initial={
+                    shouldReduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: 24, scale: 0.98 }
+                  }
+                  animate={
+                    shouldReduceMotion
+                      ? { opacity: 1 }
+                      : { opacity: 1, y: 0, scale: 1 }
+                  }
+                  exit={
+                    shouldReduceMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: 16, scale: 0.98 }
+                  }
+                  transition={
+                    shouldReduceMotion ? { duration: 0.1 } : { duration: 0.2 }
+                  }
                   className="w-full max-w-6xl max-h-[90vh] bg-card border border-border rounded-2xl overflow-hidden shadow-2xl"
                   onClick={(event) => event.stopPropagation()}
                 >
@@ -689,23 +741,7 @@ export function ProjectsSection() {
                           <motion.div
                             key={`${resolvedActiveShotSrc}-${activeShotIndex}`}
                             custom={shotDirection}
-                            variants={{
-                              enter: (direction: 1 | -1) => ({
-                                x: direction > 0 ? 48 : -48,
-                                opacity: 0,
-                                scale: 0.98,
-                              }),
-                              center: {
-                                x: 0,
-                                opacity: 1,
-                                scale: 1,
-                              },
-                              exit: (direction: 1 | -1) => ({
-                                x: direction > 0 ? -48 : 48,
-                                opacity: 0,
-                                scale: 0.98,
-                              }),
-                            }}
+                            variants={screenshotMotionVariants}
                             initial="enter"
                             animate="center"
                             exit="exit"
@@ -731,9 +767,21 @@ export function ProjectsSection() {
                         <AnimatePresence mode="wait" initial={false}>
                           <motion.div
                             key={`${activeShot.title}-${activeShotIndex}`}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
+                            initial={
+                              shouldReduceMotion
+                                ? { opacity: 0 }
+                                : { opacity: 0, y: 8 }
+                            }
+                            animate={
+                              shouldReduceMotion
+                                ? { opacity: 1 }
+                                : { opacity: 1, y: 0 }
+                            }
+                            exit={
+                              shouldReduceMotion
+                                ? { opacity: 0 }
+                                : { opacity: 0, y: -8 }
+                            }
                             transition={{ duration: 0.2 }}
                           >
                             <span className="inline-flex px-2 py-1 rounded-full text-[10px] uppercase tracking-wider bg-primary text-primary-foreground mb-2">

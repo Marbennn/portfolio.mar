@@ -4,6 +4,7 @@ import {
   AnimatePresence,
   motion,
   useInView,
+  useReducedMotion,
   useSpring,
   useScroll,
   useTransform,
@@ -226,22 +227,46 @@ const techCategories: TechCategory[] = [
 
 export function AboutSection() {
   const ref = useRef<HTMLElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [activeCategory, setActiveCategory] = useState("frontend");
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
   });
-  const accentY = useTransform(scrollYProgress, [0, 1], [130, -130]);
-  const accentYReverse = useTransform(scrollYProgress, [0, 1], [-95, 95]);
-  const accentX = useTransform(scrollYProgress, [0, 1], [-20, 20]);
-  const aboutParallaxY = useSpring(useTransform(scrollYProgress, [0, 1], [84, 0]), {
-    stiffness: 120,
-    damping: 24,
-    mass: 0.45,
-  });
+  const accentY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [130, -130],
+  );
+  const accentYReverse = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-95, 95],
+  );
+  const accentX = useTransform(
+    scrollYProgress,
+    [0, 1],
+    shouldReduceMotion ? [0, 0] : [-20, 20],
+  );
+  const aboutParallaxY = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0, 1],
+      shouldReduceMotion ? [0, 0] : [84, 0],
+    ),
+    {
+      stiffness: 120,
+      damping: 24,
+      mass: 0.45,
+    },
+  );
   const aboutParallaxOpacity = useSpring(
-    useTransform(scrollYProgress, [0, 0.25, 0.5], [0.5, 0.75, 1]),
+    useTransform(
+      scrollYProgress,
+      [0, 0.25, 0.5],
+      shouldReduceMotion ? [1, 1, 1] : [0.5, 0.75, 1],
+    ),
     {
       stiffness: 120,
       damping: 24,
@@ -417,7 +442,9 @@ export function AboutSection() {
                         initial={{ opacity: 0, y: 16 }}
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         transition={{ duration: 0.35, delay: index * 0.03 }}
-                        whileHover={{ y: -6, scale: 1.03 }}
+                        whileHover={
+                          shouldReduceMotion ? undefined : { y: -6, scale: 1.03 }
+                        }
                         className="group rounded-2xl border border-border/80 bg-card/80 p-4 min-h-[124px] flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-primary/45 hover:bg-gradient-to-br hover:from-card hover:to-primary/5 hover:shadow-[0_26px_50px_-24px_oklch(0.75_0.15_180)]"
                       >
                         <div className="w-12 h-12 rounded-xl border border-border/70 bg-background/60 flex items-center justify-center mb-3 transition-all duration-300 group-hover:border-primary/45 group-hover:bg-primary/10 group-hover:shadow-[0_0_0_6px_oklch(0.75_0.15_180_/_0.08)]">
